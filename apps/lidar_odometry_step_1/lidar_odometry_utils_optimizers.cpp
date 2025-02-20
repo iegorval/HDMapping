@@ -816,7 +816,6 @@ void optimize_sf2(std::vector<Point3Di> &intermediate_points, std::vector<Point3
                   double wfi,
                   double wka)
 {
-
     auto trj = intermediate_trajectory;
     std::vector<Point3Di> point_cloud_global;
     std::vector<Eigen::Vector3d> point_cloud_global_sc;
@@ -1177,7 +1176,6 @@ void optimize_rigid_sf(
     double rgd_sf_sigma_fi_deg,
     double rgd_sf_sigma_ka_deg)
 {
-
     auto shift = intermediate_trajectory[0].translation();
 
     auto _intermediate_trajectory = intermediate_trajectory;
@@ -1260,7 +1258,7 @@ void optimize_rigid_sf(
         Eigen::MatrixXd AtPBndt(6, 1);
         AtPBndt.setZero();
 
-        std::vector<std::mutex> mutexes(indexes.size());
+        std::mutex mutex;
 
         int number_of_observations = 0;
 
@@ -1351,8 +1349,7 @@ void optimize_rigid_sf(
             AtPA *= w;
             AtPB *= w;
 
-            std::mutex &m = mutexes[intermediate_points[indexes_i].index_pose];
-            std::unique_lock lck(m);
+            std::unique_lock lck(mutex);
             AtPAndt.block<6, 6>(c, c) += AtPA;
             AtPBndt.block<6, 1>(c, 0) -= AtPB;
 
