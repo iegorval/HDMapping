@@ -4,6 +4,8 @@ namespace fs = std::filesystem;
 
 bool load_data(std::vector<std::string>& input_file_names, LidarOdometryParams& params, std::vector<std::vector<Point3Di>>& pointsPerFile, Imu& imu_data)
 {
+    pointsPerFile.clear();  // clear data that was left from previous runs
+    imu_data.clear();  // clear data that was left from previous runs
 	std::sort(std::begin(input_file_names), std::end(input_file_names));
 	std::vector<std::string> csv_files;
 	std::vector<std::string> laz_files;
@@ -225,8 +227,9 @@ bool load_data(std::vector<std::string>& input_file_names, LidarOdometryParams& 
 }
 
 void calculate_trajectory(
-    Trajectory& trajectory, Imu& imu_data, bool fusionConventionNwu, bool fusionConventionEnu, bool fusionConventionNed, double ahrs_gain)
+    Trajectory& trajectory, const Imu& imu_data, bool fusionConventionNwu, bool fusionConventionEnu, bool fusionConventionNed, double ahrs_gain)
 {
+    trajectory.clear();  // clear all data that might have remained from the previous run
     FusionAhrs ahrs;
     FusionAhrsInitialise(&ahrs);
 
@@ -268,10 +271,12 @@ void calculate_trajectory(
 }
 
 bool compute_step_1(
-    std::vector<std::vector<Point3Di>>& pointsPerFile, LidarOdometryParams& params, Trajectory& trajectory, std::vector<WorkerData>& worker_data)
+    const std::vector<std::vector<Point3Di>>& pointsPerFile, LidarOdometryParams& params, const Trajectory& trajectory, std::vector<WorkerData>& worker_data)
 {
     int number_of_initial_points = 0;
     double timestamp_begin = 0.0;
+    params.initial_points.clear(); // Clear the initial points from the previous run
+    params.buckets.clear();  // Clear the buckets from the previous run
     for (const auto& pp : pointsPerFile)
     {
         // number_of_points += pp.size();
@@ -315,9 +320,10 @@ bool compute_step_1(
     }
 
     int threshold = params.threshold_nr_poses;
-
     int index_begin = 0;
     const int n_iter = std::floor(poses.size() / threshold);
+
+    worker_data.clear();  // remove all data that might have remained from the previous run
     worker_data.reserve(n_iter);
     for (int i = 0; i < n_iter; i++)
     {
@@ -413,6 +419,7 @@ void run_consistency(std::vector<WorkerData> &worker_data, LidarOdometryParams& 
 void save_result(std::vector<WorkerData>& worker_data, LidarOdometryParams& params, fs::path outwd)
 {   
     std::filesystem::create_directory(outwd);
+    params.current_output_dir = outwd.string();
     // concatenate data
     std::vector<WorkerData> worker_data_concatenated;
     WorkerData wd;
@@ -675,7 +682,7 @@ void load_reference_point_clouds(std::vector<std::string> input_file_names, Lida
     params.buckets = params.reference_buckets;
 }
 
-std::string save_results_automatic(LidarOdometryParams& params, std::vector<WorkerData> &worker_data, Session& session, std::string working_directory)
+void save_results_automatic(LidarOdometryParams& params, std::vector<WorkerData> &worker_data, Session& session, std::string working_directory)
 {
     int result = get_next_result_id(working_directory);
     fs::path outwd = working_directory / fs::path("lidar_odometry_result_" + std::to_string(result));
@@ -692,7 +699,6 @@ std::string save_results_automatic(LidarOdometryParams& params, std::vector<Work
     {
         session.point_clouds_container.save_poses((outwd / "poses_lo.reg").string(), false);
     }
-    return outwd.string();
 }
 
 void run_lidar_odometry(std::string input_dir, LidarOdometryParams& params)
@@ -727,10 +733,10 @@ void run_lidar_odometry(std::string input_dir, LidarOdometryParams& params)
         return;
     }
     std::string working_directory = fs::path(input_file_names[0]).parent_path().string();
-    params.current_output_dir = save_results_automatic(params, worker_data, session, working_directory);
+    save_results_automatic(params, worker_data, session, working_directory);
     if (params.apply_consistency)
     {
         run_consistency(worker_data, params);
-        params.current_output_dir = save_results_automatic(params, worker_data, session, working_directory);
+        save_results_automatic(params, worker_data, session, working_directory);
     }
 }

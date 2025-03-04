@@ -33,8 +33,8 @@ struct WorkerData
     bool show = false;
 };
 
-using NDTBucketMapType = std::unordered_map<uint64_t, NDT::Bucket>;
-using NDTBucketMapType2 = std::unordered_map<uint64_t, NDT::Bucket2>;
+using NDTBucketMapType = std::map<uint64_t, NDT::Bucket>;
+using NDTBucketMapType2 = std::map<uint64_t, NDT::Bucket2>;
 
 struct LidarOdometryParams
 {

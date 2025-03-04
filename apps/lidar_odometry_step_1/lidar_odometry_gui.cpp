@@ -963,24 +963,25 @@ void lidar_odometry_basic_gui()
 
             step1();
 
-            params.decimation = 0.01;
-            params.in_out_params.resolution_X = 0.1;
-            params.in_out_params.resolution_Y = 0.1;
-            params.in_out_params.resolution_Z = 0.1;
+            /*params.decimation = 0.1;
+            params.in_out_params.resolution_X = 0.3;
+            params.in_out_params.resolution_Y = 0.3;
+            params.in_out_params.resolution_Z = 0.3;
             params.filter_threshold_xy_inner = 0.3;
             params.filter_threshold_xy_outer = 70.0;
 
-            params.distance_bucket = 0.2;
-            params.polar_angle_deg = 10.0;
-            params.azimutal_angle_deg = 10.0;
+            params.distance_bucket = 0.5;
+            params.polar_angle_deg = 5.0;
+            params.azimutal_angle_deg = 5.0;
             params.robust_and_accurate_lidar_odometry_iterations = 20;
             params.max_distance_lidar = 30.0;
 
-            params.use_robust_and_accurate_lidar_odometry = true;
+            params.use_robust_and_accurate_lidar_odometry = true;*/
 
             step2();
 
             save_results(false);
+            std::string first_out_folder = params.current_output_dir;
 
             for (int i = 0; i < params.num_constistency_iter; i++)
             {
@@ -993,10 +994,11 @@ void lidar_odometry_basic_gui()
             }
 
             save_results(false);
+            std::string second_out_folder = params.current_output_dir;
 
             //std::cout << "folder '" << working_directory << "' does not exist" << std::endl;
 
-            std::string message_info = "Data saved to folders '" + working_directory + "\\lidar_odometry_result_0' and '" + working_directory + "\\lidar_odometry_result_1' total_length_of_calculated_trajectory=" +
+            std::string message_info = "Data saved to folders '" + first_out_folder + "' and '" + second_out_folder + "' total_length_of_calculated_trajectory = " +
                 std::to_string(params.total_length_of_calculated_trajectory) + " [m]";
 
             [[maybe_unused]]
